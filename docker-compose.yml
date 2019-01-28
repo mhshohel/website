@@ -1,0 +1,51 @@
+version: '3.7'
+
+x-source-mount:
+  &pb-source-mount
+    type: bind
+    source: .
+    target: /var/www/html/website/
+
+services:
+    apache:
+        build:
+            context: .
+            dockerfile: apache.dockerfile
+        image: apache_pb
+        read_only: false
+        volumes:
+            - *pb-source-mount
+        working_dir: /var/www/html/website
+        networks:
+            - openresty-apache-network
+
+    openresty:
+        build:
+            context: .
+            dockerfile: openresty.dockerfile
+        image: openresty_pb3
+        depends_on:
+            - apache
+        volumes:
+           - ./nginx/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
+           - *pb-source-mount
+        networks:
+            - openresty-apache-network
+        ports:
+            - "80:80"
+
+networks:
+    openresty-apache-network:
+        driver: bridge
+
+
+    #php-fpm:
+    #    build:
+    #        context: .
+    #        dockerfile: phpfpm.dockerfile
+    #    image: phpfpm_pb3
+    #    volumes:
+    #        - *pb-source-mount
+    #    networks:
+    #        - openresty-apache-network
+    #    working_dir: /var/www/html/website/

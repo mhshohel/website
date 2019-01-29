@@ -10,4 +10,3 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-av
 	sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf && \
 	ln -sf /dev/stdout /var/log/apache2/access.log && \
 	ln -sf /dev/stderr /var/log/apache2/error.log
-

@@ -7,37 +7,33 @@ x-source-mount:
     target: /var/www/html/website/
 
 services:
-    apache:
+    apache_pb3:
         build:
             context: .
             dockerfile: apache.dockerfile
-        image: apache_pb
-        read_only: false
+        image: apache_pb3
         volumes:
-            - *pb-source-mount
-        working_dir: /var/www/html/website
+        - *pb-source-mount
         networks:
-            - openresty-apache-network
+        - openresty-apache-network
 
-    openresty:
+    openresty_pb3:
         build:
             context: .
             dockerfile: openresty.dockerfile
         image: openresty_pb3
         depends_on:
-            - apache
+        - apache_pb3
         volumes:
-           - ./nginx/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
-           - *pb-source-mount
+        - *pb-source-mount
         networks:
-            - openresty-apache-network
+        - openresty-apache-network
         ports:
-            - "80:80"
+        - "80:80"
 
 networks:
     openresty-apache-network:
         driver: bridge
-
 
     #php-fpm:
     #    build:

@@ -1,13 +1,13 @@
 version: '3.7'
 
 services:
-    apache:
+    apache_pb3:
         build:
             context: .
             dockerfile: apache.dockerfile
         image: apache_pb3
 
-    openresty:
+    openresty_pb3:
         build:
             context: .
             dockerfile: openresty.dockerfile

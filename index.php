@@ -22,7 +22,9 @@
 		$sTime = microtime(true);
 
 		$res=0;
-		for($i=0; $i<=33333333;$i++){
+		//$max = 33333333;
+		$max = 11111111;
+		for($i=0; $i<=$max;$i++){
 			$res += $i + 1;
 			$res = 2+$res;
 		}
@@ -43,7 +45,7 @@
 	<title>Title</title>
 </head>
 <body>
-New Code for ECS (PHP) V2
+New Code for ECS (PHP) V2 : <?= $max?>
 
 <br/>
 <br/>

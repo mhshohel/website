@@ -64,7 +64,7 @@ New Code for ECS (PHP) V2 : <?= $max?>
 <br/>
 
 <?
-echo runtest();
+//echo runtest();
 ?>
 
 <br/>

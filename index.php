@@ -23,7 +23,8 @@
 
 		$res=0;
 		//$max = 33333333;
-		$max = 11111111;
+		//$max = 11111111;
+		$max = 51111111;
 		for($i=0; $i<=$max;$i++){
 			$res += $i + 1;
 			$res = 2+$res;
@@ -64,7 +65,7 @@ New Code for ECS (PHP) V2 : <?= $max?>
 <br/>
 
 <?
-//echo runtest();
+echo runtest();
 ?>
 
 <br/>
@@ -72,8 +73,8 @@ New Code for ECS (PHP) V2 : <?= $max?>
 
 <?
 
-//echo '<p><span class="description">Server Memory Usage:</span> <span class="result">= '. get_server_memory_usage() .' %</span></p>';
-//echo '<p><span class="description">Server CPU Usage: </span> <span class="result">= ' .get_server_cpu_usage() .'%</span></p>';
+echo '<p><span class="description">Server Memory Usage:</span> <span class="result">= '. get_server_memory_usage() .' %</span></p>';
+echo '<p><span class="description">Server CPU Usage: </span> <span class="result">= ' .get_server_cpu_usage() .'%</span></p>';
 
 ?>
 

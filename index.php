@@ -72,8 +72,8 @@ echo runtest();
 
 <?
 
-echo '<p><span class="description">Server Memory Usage:</span> <span class="result">= '. get_server_memory_usage() .' %</span></p>';
-echo '<p><span class="description">Server CPU Usage: </span> <span class="result">= ' .get_server_cpu_usage() .'%</span></p>';
+//echo '<p><span class="description">Server Memory Usage:</span> <span class="result">= '. get_server_memory_usage() .' %</span></p>';
+//echo '<p><span class="description">Server CPU Usage: </span> <span class="result">= ' .get_server_cpu_usage() .'%</span></p>';
 
 ?>
 

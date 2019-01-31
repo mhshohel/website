@@ -46,7 +46,7 @@
 	<title>Title</title>
 </head>
 <body>
-New Code for ECS (PHP) V2 : <?= $max?>
+New Code for ECS (PHP) V3 : <?= $max?>
 
 <br/>
 <br/>

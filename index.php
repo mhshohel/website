@@ -24,7 +24,7 @@
 		$res=0;
 		//$max = 33333333;
 		//$max = 11111111;
-		$max = 111111;
+		$max = 9999;
 		for($i=0; $i<=$max;$i++){
 			$res += $i + 1;
 			$res = 2+$res;
@@ -65,7 +65,7 @@ New Code for ECS (PHP) V2 : <?= $max?>
 <br/>
 
 <?
-//echo runtest();
+echo runtest();
 ?>
 
 <br/>

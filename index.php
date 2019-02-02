@@ -44,6 +44,8 @@
 <head>
 	<meta charset="UTF-8">
 	<title>Title</title>
+
+	<link rel="stylesheet" href="style/style.css"/>
 </head>
 <body>
 New Code for ECS (PHP) V3 : <?= $max?>
@@ -65,6 +67,7 @@ New Code for ECS (PHP) V3 : <?= $max?>
 <br/>
 
 <?
+
 //echo runtest();
 ?>
 

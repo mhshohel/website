@@ -5,4 +5,4 @@ FROM php:5.5.38-fpm-alpine
 
 #COPY ./src/html/pbsalesite/pbox14/ /var/www/html/
 
-EXPOSE 9090
+EXPOSE 9000

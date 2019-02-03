@@ -1,0 +1,12 @@
+services:
+    apache_pb3:
+        build:
+            context: .
+            dockerfile: apache.dockerfile
+        image: apache_pb3
+
+    openresty_pb3:
+        build:
+            context: .
+            dockerfile: openresty.dockerfile
+        image: openresty_pb3

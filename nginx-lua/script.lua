@@ -26,27 +26,6 @@ ngx.print("[" .. res.body .. "]")
 
 
 
---http.get("https://nodemcu.readthedocs.io/en/master/en/modules/http/", nil, function(code, data)
---    if (code ~= 200) then
---        print("HTTP request failed")
---    else
---        print(code, data)
---    end
---end)
-
-
---https.request {
---    method = args[1],
---    url = args[2],
---    source = ltn12.source.string(reqbody),
---    headers = {
---        ["Content-Type"] = "application/x-www-form-urlencoded",
---        ["Content-Length"] = #reqbody
---    },
---    sink = ltn12.sink.table(respbody)
---}
-
-
 
 
 

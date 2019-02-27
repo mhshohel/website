@@ -9,13 +9,15 @@ local redis                 = require "resty.redis"
 local shdict                = require "resty.core.shdict" --requore for capacity, flush
 
 local acmeLocalUrl          = "/.well%-known/acme%-challenge/"   -- "-" is special, need to add % before it to remove using gsub
-local requestUri            = string.gsub(ngx.var.request_uri, acmeLocalUrl, "")
+local requestUriKey         = string.gsub(ngx.var.request_uri, acmeLocalUrl, "")
 
 local acmeChallenge         = ngx.shared.acmechallenge
-local expiresInShortTime    = 600 --600  -- 10mins
-local expiresInLongTime     = 3000 --3000 -- 50mins
+local expiresInShortTime    = 300 --300  -- 5 mins
+local expiresInLongTime     = 21600 --21600 -- 6 hours
 local thresholdExpire       = 3145728 --Flush expired cache if reach to 3MB = 3145728 bytes
 local thresholdFlush        = 1048576 --Flush all cache if reach to 1MB = 1048576 bytes
+
+local challenge             = "none"
 
 local function FlushExpiredCache(freeSpace)
     --Flush Expired Keys
@@ -31,26 +33,34 @@ local function FlushAllCache(freeSpace)
     end
 end
 
+local function CheckCacheStatus()
+    local freeSpace = acmeChallenge:free_space()
+    ngx.say(freeSpace)
+    FlushExpiredCache(freeSpace)
+    FlushAllCache(freeSpace)
+end
+
 local function GetChallengeFromRedis()
+    ngx.say("Get From REDIS")
+
     local redisUrl              = "172.16.238.1"
 
     local red                   = redis:new()
     red:set_timeout(1000) -- 1 sec
-
 
     local ok, err               = red:connect(redisUrl, 6379)
     if not ok then
         ngx.exit(500)   -- Exit only on ERROR
     end
 
-    local res, err              = red:get(requestUri)
+    local res, err              = red:get(requestUriKey)
     if not res or res == ngx.null then
         -- Do not send any message, otherwise it will always set status 200
         -- bgx.exit stops the connection pool, so we don't exit
         res                     = "none"
-        acmeChallenge:set(requestUri, res, expiresInShortTime);
+        acmeChallenge:set(requestUriKey, res, expiresInShortTime);
     else
-        acmeChallenge:set(requestUri, res, expiresInLongTime);
+        acmeChallenge:set(requestUriKey, res, expiresInLongTime);
     end
 
     if acmeChallenge:get("TotalKeys") == nil then
@@ -59,30 +69,33 @@ local function GetChallengeFromRedis()
 
     acmeChallenge:incr("TotalKeys", 1)
 
-    local freeSpace = acmeChallenge:free_space()
-    ngx.say(freeSpace)
-    FlushExpiredCache(freeSpace)
-    FlushAllCache(freeSpace)
-
-    ngx.say(res)
+    challenge = res
 
     --Must be end of the file, otherwise takes longer time
     red:set_keepalive(10000, 20) --20 connections is fine for acme
+
+    CheckCacheStatus()
 end
 
-local function GetChallengeFromLua()
-    ngx.say(requestUri)
-    local challenge       = acmeChallenge:get(requestUri)
+local function GetFromLua()
+    challenge       = acmeChallenge:get(requestUriKey)
 
     if not challenge then
-        ngx.say("Get From REDIS")
-        GetChallengeFromRedis()
+        return false
     else
         ngx.say("Got From Lua")
-        ngx.say(challenge)
+        return true
     end
 end
 
-GetChallengeFromLua()
+local function HandleAcmeChallenges()
+    ngx.say(requestUriKey)
 
+    if GetFromLua() == false then
+        GetChallengeFromRedis()
+    end
 
+    ngx.say(challenge)
+end
+
+HandleAcmeChallenges()

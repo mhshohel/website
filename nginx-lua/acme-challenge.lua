@@ -6,8 +6,9 @@
 local redis                 = require "resty.redis"
 local shdict                = require "resty.core.shdict" --requore for capacity, flush
 
+local keySuffix             = "-token"
 local acmeLocalUrl          = "/.well%-known/acme%-challenge/"   -- "-" is special, need to add % before it to remove using gsub
-local requestUriKey         = string.gsub(ngx.var.request_uri, acmeLocalUrl, "")
+local requestUriKey         = string.gsub(ngx.var.request_uri, acmeLocalUrl, "") .. keySuffix
 
 local acmeChallenge         = ngx.shared.acmechallenge
 local expiresInShortTime    = 300 --300  -- 5 mins if challenge not found

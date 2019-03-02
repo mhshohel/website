@@ -2,8 +2,6 @@
 -- First Check Challenge in Lua then Redis
 -- Reason to keep in Lua is in worst case if challenge link used by someone for request
 -- Always clean expire keys on request from Redis
--- Keys or challenge not found in Redis will be store for 10mins
--- Keys or challenge found in Redis will be store for 6 hours
 
 local redis                 = require "resty.redis"
 local shdict                = require "resty.core.shdict" --requore for capacity, flush
@@ -12,8 +10,8 @@ local acmeLocalUrl          = "/.well%-known/acme%-challenge/"   -- "-" is speci
 local requestUriKey         = string.gsub(ngx.var.request_uri, acmeLocalUrl, "")
 
 local acmeChallenge         = ngx.shared.acmechallenge
-local expiresInShortTime    = 300 --300  -- 5 mins
-local expiresInLongTime     = 21600 --21600 -- 6 hours
+local expiresInShortTime    = 300 --300  -- 5 mins if challenge not found
+local expiresInLongTime     = 21600 --21600 -- 6 hours if challenge found
 local thresholdExpire       = 3145728 --Flush expired cache if reach to 3MB = 3145728 bytes
 local thresholdFlush        = 1048576 --Flush all cache if reach to 1MB = 1048576 bytes
 
@@ -35,14 +33,11 @@ end
 
 local function CheckCacheStatus()
     local freeSpace = acmeChallenge:free_space()
-    ngx.say(freeSpace)
     FlushExpiredCache(freeSpace)
     FlushAllCache(freeSpace)
 end
 
 local function GetChallengeFromRedis()
-    ngx.say("Get From REDIS")
-
     local redisUrl              = "172.16.238.1"
 
     local red                   = redis:new()
@@ -83,14 +78,11 @@ local function GetFromLua()
     if not challenge then
         return false
     else
-        ngx.say("Got From Lua")
         return true
     end
 end
 
 local function HandleAcmeChallenges()
-    ngx.say(requestUriKey)
-
     if GetFromLua() == false then
         GetChallengeFromRedis()
     end

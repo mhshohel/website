@@ -236,6 +236,7 @@ local function GetCertFromRedis()
         -- if redis connection error the redirect to http
         currentCertStatus = requested
         certsStatus:set(server_name, currentCertStatus, expiresQuickly) --Stop request for 60s before try again
+        ngx.log(ngx.OK, "Redis Connection ERROR!")
         --ngx.exit(500) -- do not exit
         return true
     end
@@ -259,6 +260,7 @@ local function GetCertFromRedis()
             if not currentFullChain then
                 currentCertStatus = requested
                 certsStatus:set(server_name, currentCertStatus, expiresQuickly)
+                ngx.log(ngx.OK, "Fullchain Convertion ERROR!")
                 return true
             end
 
@@ -268,6 +270,7 @@ local function GetCertFromRedis()
             if not currentDomainKey then
                 currentCertStatus = requested
                 certsStatus:set(server_name, currentCertStatus, expiresQuickly)
+                ngx.log(ngx.OK, "Key Convertion ERROR!")
                 return true
             end
 
@@ -330,14 +333,15 @@ local function HandleYourSite()
             ngx.say("Not Valid; Status: " .. currentCertStatus)
             HTTPRedirect80()
         end
-
-        ngx.say("......................")
-        ngx.say(expireDuration / 86400 .. " days")
-        ngx.say("......................")
     else
         ngx.say("Not Valid (Redis Connection ERROR); Status: " .. currentCertStatus)
         HTTPRedirect80()
     end
+
+    ngx.say("......................")
+    ngx.say(expireDuration / 86400 .. " days")
+    ngx.say(expireDuration .. " seconds")
+    ngx.say("......................")
 end
 
 local clock = os.clock

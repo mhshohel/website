@@ -31,6 +31,7 @@ local domainKeys            = ngx.shared.domainkeys     --Keep Domain Key; DER V
 local certsExpire           = ngx.shared.certsexpire    --Keep Certificate Nex Update Date
 local certsStatus           = ngx.shared.certsstatus    --Keep Certificate Validitiy Status
 
+local expiresQuickly        = 60        -- 60  -- 1 min
 local expiresInShortTime    = 300       -- 300  -- 5 mins
 local expiresInForNotFound  = 86400     -- 86400  -- 24 hours; for not found status
 local expiresInForFaild     = 21600     -- 21600  -- 6 hours; for failed status
@@ -234,8 +235,7 @@ local function GetCertFromRedis()
     if not ok then
         -- if redis connection error the redirect to http
         currentCertStatus = requested
-        certsStatus:set(server_name, currentCertStatus, 60) --Stop request for 60s before try again
-        HTTPRedirect80()
+        certsStatus:set(server_name, currentCertStatus, expiresQuickly) --Stop request for 60s before try again
         --ngx.exit(500) -- do not exit
         return true
     end
@@ -252,28 +252,38 @@ local function GetCertFromRedis()
         if resPbCert and resPbCert ~= "" and resPbCert ~= ngx.null
             and resPbPem and resPbPem ~= "" and resPbPem ~= ngx.null then
 
-            certsExpire:set(server_name, currentCertExpire, expireDuration)
+            currentFullChain                = Decrypt(resPbCert)
 
-            currentFullChain        = Decrypt(resPbCert)
-            currentFullChain        = ssl.cert_pem_to_der(currentFullChain)
+            local chainError
+            currentFullChain, chainError    = ssl.cert_pem_to_der(currentFullChain)
+            if not currentFullChain then
+                currentCertStatus = requested
+                certsStatus:set(server_name, currentCertStatus, expiresQuickly)
+                return true
+            end
+
+            currentDomainKey                = Decrypt(resPbPem)
+            local keyError
+            currentDomainKey, keyError      = ssl.priv_key_pem_to_der(currentDomainKey)
+            if not currentDomainKey then
+                currentCertStatus = requested
+                certsStatus:set(server_name, currentCertStatus, expiresQuickly)
+                return true
+            end
 
             fullChains:set(server_name, currentFullChain, expireDuration)
-
-            currentDomainKey    = Decrypt(resPbPem)
-            currentDomainKey    = ssl.priv_key_pem_to_der(currentDomainKey)
-
             domainKeys:set(server_name, currentDomainKey, expireDuration)
+            certsExpire:set(server_name, currentCertExpire, expireDuration)
 
             KeyCounter()
         else
-            currentCertStatus = requested
-            expireDuration = expiresInShortTime
+            currentCertStatus               = requested
+            expireDuration                  = expiresInShortTime
         end
     end
 
     certsStatus:set(server_name, currentCertStatus, expireDuration)
 
-    ngx.say(expireDuration)
     --Must be end of the file, otherwise takes longer time
     red:set_keepalive(15000, 100)
 
@@ -322,9 +332,11 @@ local function HandleYourSite()
         end
 
         ngx.say("......................")
---        ngx.say(expireDuration / 86400 .. " days")
-        ngx.say(expireDuration)
+        ngx.say(expireDuration / 86400 .. " days")
         ngx.say("......................")
+    else
+        ngx.say("Not Valid (Redis Connection ERROR); Status: " .. currentCertStatus)
+        HTTPRedirect80()
     end
 end
 

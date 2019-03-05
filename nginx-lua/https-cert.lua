@@ -334,7 +334,7 @@ local function HandleYourSite()
             HTTPRedirect80()
         end
     else
-        ngx.say("Not Valid (Redis Connection ERROR); Status: " .. currentCertStatus)
+        ngx.say("Not Valid (Redis or Convertion ERROR); Status: " .. currentCertStatus)
         HTTPRedirect80()
     end
 

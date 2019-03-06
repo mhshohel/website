@@ -27,18 +27,20 @@ local function ClearSSLCertificate()
 end
 
 local function LoadCertificateToSSL()
+    --fullchain.crt
     local ok, err           = coreVariables.ssl.set_der_cert(coreVariables.currentFullChain)
     if not ok then
         coreFunctions.SetStatusRequested()
-        coreFunctions.Print("Failed to set certificate DER")
+        coreFunctions.Print("Failed to set certificate (fullchain.crt) DER")
     end
 end
 
 local function LoadPrivateKeyToSSL()
+    --private.pem
     local ok, err           = coreVariables.ssl.set_der_priv_key(coreVariables.currentDomainKey)
     if not ok then
         coreFunctions.SetStatusRequested()
-        coreFunctions.Print("Failed to set key DER")
+        coreFunctions.Print("Failed to set key (private.pem) DER")
     end
 end
 

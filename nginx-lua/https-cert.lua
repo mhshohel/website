@@ -2,32 +2,7 @@ local CoreVariables = require("/var/www/html/website/nginx-lua/http-https-core-v
 local CoreFunctions = require("/var/www/html/website/nginx-lua/http-https-core-functions")
 
 local coreVariables = CoreVariables:new()
-local coreFunctions = CoreFunctions:new(coreVariables, true)
-
-local function HandleYourHTTPSSite()
-    local hasRedisConnectionErr = false -- default false
-
-    coreFunctions.SetupRedisKeyName()
-
-    if coreFunctions.GetFromLua() == false then
-        hasRedisConnectionErr = coreFunctions.GetCertFromRedis()
-    end
-
-    if hasRedisConnectionErr == false then
-        if coreVariables.currentCertStatus == coreVariables.valid then
-            coreFunctions.Print("Valid; Status: " .. coreVariables.currentCertStatus, true)
-        else
-            coreFunctions.Print("Not Valid; Status: " .. coreVariables.currentCertStatus, true)
-        end
-    else
-        coreFunctions.Print("Not Valid (Redis or Convertion ERROR); Status: " .. currentCertStatus, true)
-    end
-
-    coreFunctions.Print("......................", true)
-    coreFunctions.Print(coreVariables.expireDuration / 86400 .. " days", true)
-    coreFunctions.Print(coreVariables.expireDuration .. " seconds", true)
-    coreFunctions.Print("......................", true)
-end
+local coreFunctions = CoreFunctions:new(coreVariables)
 
 local function CheckSNIName()
     local sni, err      = coreVariables.ssl.server_name()
@@ -39,47 +14,79 @@ local function CheckSNIName()
 
     -- Remove ME
     -----------------------------------------------------------------------------------------------------
-    coreVariables.server_name = "www.publicdomain3187.com"
+    coreVariables.server_name = "www.publicdomain310.com"
     -----------------------------------------------------------------------------------------------------
 end
 
-local function Main()
-    CheckSNIName()
+local function ClearSSLCertificate()
+    local ok, err           = coreVariables.ssl.clear_certs()
+    if not ok then
+        coreFunctions.SetStatusRequested()
+        coreFunctions.Print("Clear Certificate")
+    end
+end
 
-    coreFunctions.Print(coreVariables.server_name, true)
+local function LoadCertificateToSSL()
+    local ok, err           = coreVariables.ssl.set_der_cert(coreVariables.currentFullChain)
+    if not ok then
+        coreFunctions.SetStatusRequested()
+        coreFunctions.Print("Failed to set certificate DER")
+    end
+end
 
+local function LoadPrivateKeyToSSL()
+    local ok, err           = coreVariables.ssl.set_der_priv_key(coreVariables.currentDomainKey)
+    if not ok then
+        coreFunctions.SetStatusRequested()
+        coreFunctions.Print("Failed to set key DER")
+    end
+end
+
+local function LoadCertificate()
+    coreFunctions.Print("Load SSL Certificate...")
+
+    ClearSSLCertificate()
+    LoadCertificateToSSL()
+    LoadPrivateKeyToSSL()
+end
+
+local function HandleYourHTTPSSite()
     local clock = os.clock
     local start = clock()
 
-    coreFunctions.Print("Handle SSL", true);
+    CheckSNIName()
 
-    HandleYourHTTPSSite()
+    coreFunctions.Print(coreVariables.server_name)
+
+    local hasRedisConnectionErr = coreFunctions.Init() -- default false; means no connection error
 
     local endtiem = (clock() - start)
-    coreFunctions.Print("----------------------", true)
-    coreFunctions.Print("Total Time In Seconds: " .. endtiem, true)
-    coreFunctions.Print("Total Time In Readable Seconds: " .. endtiem * 1000, true)
-    coreFunctions.Print("----------------------", true)
+    coreFunctions.Print("----------------------")
+    coreFunctions.Print("Total Time In Seconds: " .. endtiem)
+    coreFunctions.Print("Total Time In Readable Seconds: " .. endtiem * 1000)
+    coreFunctions.Print("----------------------")
+
+    coreFunctions.Print("......................")
+    coreFunctions.Print(coreVariables.expireDuration / 86400 .. " days")
+    coreFunctions.Print(coreVariables.expireDuration .. " seconds")
+    coreFunctions.Print("......................")
+
+    if hasRedisConnectionErr == false then
+        if coreVariables.currentCertStatus == coreVariables.valid then
+            coreFunctions.Print("Valid; Status: " .. coreVariables.currentCertStatus)
+
+            --LOAD SSL
+            LoadCertificate()
+        else
+            coreFunctions.Print("Not Valid; Status: " .. coreVariables.currentCertStatus)
+            coreFunctions.Print("REDIRECT TO HTTP (90)")
+        end
+    else
+        coreFunctions.Print("Not Valid (Redis or Convertion ERROR); Status: " .. currentCertStatus)
+        coreFunctions.Print("REDIRECT TO HTTP (90)")
+    end
 end
 
-Main()
+HandleYourHTTPSSite()
 
-coreFunctions.Print(collectgarbage("count") .. ' kilobytes memory used', true)
-
---ngx.say(collectgarbage("count") .. ' kilobytes memory used')
---coreVaariables = ngx.null
---ngx.say(collectgarbage("count"))
-
-
---return ngx.redirect("http://www.google.com")
---echo "$server_port:$request_uri"
-
---ngx.STDERR
---ngx.EMERG
---ngx.ALERT
---ngx.CRIT
---ngx.ERR
---ngx.WARN
---ngx.NOTICE
---ngx.INFO
---ngx.DEBUG
+coreFunctions.Print(collectgarbage("count") .. ' kilobytes memory used')

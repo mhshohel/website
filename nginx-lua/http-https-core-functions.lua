@@ -1,14 +1,11 @@
 local CoreFunctions = {}
 
-function CoreFunctions:new (coreVariables, isLogOnly)
+function CoreFunctions:new (coreVariables)
     local object = {}
 
-    object.Print = function(message, isLog)
-        if isLog == true  then
-            ngx.log(ngx.OK, message)
-        else
-            ngx.say(message)
-        end
+    object.Print = function(message)
+        ngx.log(ngx.OK, message)
+--        ngx.say(message)
     end
 
     object.SetupRedisKeyName = function()
@@ -27,7 +24,7 @@ function CoreFunctions:new (coreVariables, isLogOnly)
         if not coreVariables.currentCertStatus or coreVariables.currentCertStatus == ngx.null or coreVariables.currentCertStatus == "" then
             return false
         else
-            object.Print("Got From LUA", isLogOnly)
+            object.Print("Got From LUA")
             return true
         end
     end
@@ -125,6 +122,12 @@ function CoreFunctions:new (coreVariables, isLogOnly)
         end
     end
 
+    object.SetStatusRequested = function()
+        object.Print("Set status as Requested")
+        coreVariables.currentCertStatus = coreVariables.requested
+        coreVariables.certsStatus:set(coreVariables.server_name, coreVariables.currentCertStatus, coreVariables.expiresQuickly) --Stop request for 60s before try again
+    end
+
     object.Decrypt = function(input)
         return coreVariables.aes_128_cbc_md5:decrypt(ngx.decode_base64(input))
     end
@@ -152,7 +155,7 @@ function CoreFunctions:new (coreVariables, isLogOnly)
     end
 
     object.GetCertFromRedis = function()
-        object.Print("Get From REDIS", isLogOnly)
+        object.Print("Get From REDIS")
 
         local red                   = coreVariables.redis:new()
         red:set_timeout(1000) -- 1 sec
@@ -160,9 +163,8 @@ function CoreFunctions:new (coreVariables, isLogOnly)
         local ok, err               = red:connect(coreVariables.redisUrl, 6379)
         if not ok then
             -- if redis connection error the redirect to http
-            coreVariables.currentCertStatus = coreVariables.requested
-            coreVariables.certsStatus:set(coreVariables.server_name, coreVariables.currentCertStatus, coreVariables.expiresQuickly) --Stop request for 60s before try again
-            object.Print("Redis Connection ERROR!", isLogOnly)
+            object.SetStatusRequested()
+            object.Print("Redis Connection ERROR!")
             --ngx.exit(500) -- do not exit
             return true
         end
@@ -180,13 +182,11 @@ function CoreFunctions:new (coreVariables, isLogOnly)
                     and resPbPem and resPbPem ~= "" and resPbPem ~= ngx.null then
 
                 coreVariables.currentFullChain                = object.Decrypt(resPbCert)
-
                 local chainError
                 coreVariables.currentFullChain, chainError    = coreVariables.ssl.cert_pem_to_der(coreVariables.currentFullChain)
                 if not coreVariables.currentFullChain then
-                    coreVariables.currentCertStatus = coreVariables.requested
-                    coreVariables.certsStatus:set(coreVariables.server_name, coreVariables.currentCertStatus, coreVariables.expiresQuickly)
-                    object.Print("Fullchain Convertion ERROR!", isLogOnly)
+                    object.SetStatusRequested()
+                    object.Print("Fullchain Convertion ERROR!")
                     return true
                 end
 
@@ -194,9 +194,8 @@ function CoreFunctions:new (coreVariables, isLogOnly)
                 local keyError
                 coreVariables.currentDomainKey, keyError      = coreVariables.ssl.priv_key_pem_to_der(coreVariables.currentDomainKey)
                 if not coreVariables.currentDomainKey then
-                    coreVariables.currentCertStatus = coreVariables.requested
-                    coreVariables.certsStatus:set(coreVariables.server_name, coreVariables.currentCertStatus, coreVariables.expiresQuickly)
-                    object.Print("Key Convertion ERROR!", isLogOnly)
+                    object.SetStatusRequested()
+                    object.Print("Key Convertion ERROR!")
                     return true
                 end
 
@@ -219,11 +218,30 @@ function CoreFunctions:new (coreVariables, isLogOnly)
         return false
     end
 
---
---    ngx.say(coreVariables.key)
---    ngx.say(coreVariables.valid)
---
---    coreVariables.valid = "TEST"
+    object.RequestCachedCertificate = function()
+        -- only request for cached certificate; don't order
+        object.Print("Request new certificate or status from cert server")
+    end
+
+    object.Init = function()
+        local hasRedisConnectionErr = false -- default false; means no connection error
+
+        coreVariables.expireDuration = coreVariables.expiresInLongTime --initialize expire time
+
+        object.SetupRedisKeyName()
+
+        if object.GetFromLua() == false then
+            hasRedisConnectionErr = object.GetCertFromRedis()
+        end
+
+        -- Request cached cert before Redirect; must handle status from cert
+        if coreVariables.currentCertStatus == coreVariables.requested then
+            object.RequestCachedCertificate()
+        end
+
+        return hasRedisConnectionErr
+    end
+
     return object
 end
 

@@ -147,23 +147,31 @@ local function RequestCachedCertificate()
 end
 
 local function HTTPRedirect80()
-    ngx.say(ngx.var.server_port)
     ngx.say("Redirect to HTTP")
+end
 
-    --    if port ~= 80 then
-    --        ngx.say("Redirecting to HTTP site...")
-    --    end
+local function ClearSSLCertificate()
+    local ok, err           = ssl.clear_certs()
+    if not ok then
+        ngx.log(ngx.OK, "Failed to clear existing (fallback) certificates")
+        return false
+    end
+    return true
+end
+
+local function LoadSSLCertificate()
+    local res = ClearSSLCertificate()
+
+    if res == true then
+        ngx.say("Cleared")
+    else
+        ngx.say("NOT Cleared")
+    end
 end
 
 local function HTTPSRedirect443()
     ngx.say(ngx.var.server_port)
     ngx.say("Redirect to HTTPS or HTTP depending on PORT")
-
-    --    if port ~= 443 then
-    --        ngx.say("Redirecting to HTTP site...")
-    --    else
-    --        HTTPRedirect80()
-    --    end
 end
 
 local function SetupLuaStatusAndExpireTime(resPbExp, resPbStatus)
@@ -309,6 +317,12 @@ end
 
 local function HandleYourSite()
     local hasRedisConnectionErr = false -- default false
+    local port      = tostring(ngx.var.server_port)
+    local httpPort  = tostring(90)
+    local httpsPort = tostring(443)
+
+    ngx.say(port)
+
     expireDuration = expiresInLongTime --initialize expire time
 
     CheckSNIName()
@@ -328,14 +342,24 @@ local function HandleYourSite()
     if hasRedisConnectionErr == false then
         if currentCertStatus == valid then
             ngx.say("Valid; Status: " .. currentCertStatus)
-            HTTPSRedirect443()
+            if port == httpPort then
+                HTTPSRedirect443()
+            end
+
+            if port == httpsPort then
+                LoadSSLCertificate()
+            end
         else
             ngx.say("Not Valid; Status: " .. currentCertStatus)
-            HTTPRedirect80()
+            if port == httpsPort then
+                HTTPRedirect80()
+            end
         end
     else
         ngx.say("Not Valid (Redis or Convertion ERROR); Status: " .. currentCertStatus)
-        HTTPRedirect80()
+        if port == httpsPort then
+            HTTPRedirect80()
+        end
     end
 
     ngx.say("......................")
@@ -344,35 +368,46 @@ local function HandleYourSite()
     ngx.say("......................")
 end
 
-local clock = os.clock
-local start = clock()
+local function Main()
+    local matched       = false
+    local requestUri    = ngx.var.request_uri
+    local host          = ngx.var.host
 
-HandleYourSite()
+    if not string.find(requestUri, "/.well%-known/acme%-challenge/") and
+        not string.find(host, ".portfoliobox.net") and
+        not string.find(host, ".pb.design") and
+        not string.find(host, ".pb.gallery") and
+        not string.find(host, ".pb.online") and
+        not string.find(host, ".pb.photography") and
+        not string.find(host, ".pb.studio") and
+        not string.find(host, ".pb.store") and
+        not string.find(host, ".pb.style") and
+        not string.find(host, ".cloudfront.net") then
 
-local endtiem = (clock() - start)
-ngx.say("----------------------")
-ngx.say("Total Time In Seconds: " .. endtiem)
-ngx.say("Total Time In Readable Seconds: " .. endtiem * 1000)
-ngx.say("----------------------")
+        matched = true
+    end
+
+    if matched == true then
+        local clock = os.clock
+        local start = clock()
+
+        HandleYourSite()
+
+        local endtiem = (clock() - start)
+        ngx.say("----------------------")
+        ngx.say("Total Time In Seconds: " .. endtiem)
+        ngx.say("Total Time In Readable Seconds: " .. endtiem * 1000)
+        ngx.say("----------------------")
+    end
+end
 
 
---ngx.say('HI')
---ngx.say(ngx.var.remote_addr)
---ngx.say(ngx.var.server_port)
+Main()
+
 
 
 --return ngx.redirect("http://www.google.com")
 --echo "$server_port:$request_uri"
-
-
-
--- If cert found in redis
--- if cert not found in redis then request to cert server
--- after request if cert not found create
--- if found check status
--- if not pending then try again
-
-
 
 --ngx.STDERR
 --ngx.EMERG
@@ -383,36 +418,3 @@ ngx.say("----------------------")
 --ngx.NOTICE
 --ngx.INFO
 --ngx.DEBUG
-
---ngx.log(ngx.STDERR, requestUri)
---ngx.log(ngx.ERR, requestUri)
-
---local red = redis:new()
---red:set_timeout(300) -- 1 sec = 1000
-----
---local ok, err = red:connect("172.16.238.1", 6379)
---if not ok then
---    ngx.say("failed to connect: ", err)
---    return
---end
---local res, err = red:get(requestUri)
---if not res or res == ngx.null then
-----    check backup before redirect to http
---    return ngx.exit(404)
---else
---    local clock = os.clock
---    local start = clock()
---
---
-----        ngx.say(t.FullChain)
-----        ngx.say(chain_der)
---
---        local endtiem = (clock() - start)
---        ngx.say(endtiem)
---        ngx.say(endtiem * 1000)
---    else
---        ngx.say('Owned By PB')
---    end
---
---end
-

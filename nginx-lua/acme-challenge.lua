@@ -6,6 +6,7 @@
 local redis                 = require "resty.redis"
 local shdict                = require "resty.core.shdict" --requore for capacity, flush
 
+local redisUrl              = "172.16.238.1"
 local keySuffix             = "-token"
 local acmeLocalUrl          = "/.well%-known/acme%-challenge/"   -- "-" is special, need to add % before it to remove using gsub
 local requestUriKey         = string.gsub(ngx.var.request_uri, acmeLocalUrl, "") .. keySuffix
@@ -38,9 +39,15 @@ local function CheckCacheStatus()
     FlushAllCache(freeSpace)
 end
 
-local function GetChallengeFromRedis()
-    local redisUrl              = "172.16.238.1"
+local function KeyCounter()
+    if acmeChallenge:get("TotalKeys") == nil then
+        acmeChallenge:add("TotalKeys", 0);
+    end
 
+    acmeChallenge:incr("TotalKeys", 1)
+end
+
+local function GetChallengeFromRedis()
     local red                   = redis:new()
     red:set_timeout(1000) -- 1 sec
 
@@ -59,11 +66,7 @@ local function GetChallengeFromRedis()
         acmeChallenge:set(requestUriKey, res, expiresInLongTime);
     end
 
-    if acmeChallenge:get("TotalKeys") == nil then
-        acmeChallenge:add("TotalKeys", 0);
-    end
-
-    acmeChallenge:incr("TotalKeys", 1)
+    KeyCounter()
 
     challenge = res
 

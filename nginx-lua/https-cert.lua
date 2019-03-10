@@ -1,3 +1,4 @@
+--Don't use .lua to load
 local CoreVariables = require("/var/www/html/website/nginx-lua/http-https-core-veriables")
 local CoreFunctions = require("/var/www/html/website/nginx-lua/http-https-core-functions")
 

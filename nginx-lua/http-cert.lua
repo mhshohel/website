@@ -1,3 +1,4 @@
+--Don't use .lua to load
 local CoreVariables = require("/var/www/html/website/nginx-lua/http-https-core-veriables")
 local CoreFunctions = require("/var/www/html/website/nginx-lua/http-https-core-functions")
 
@@ -61,9 +62,12 @@ local function HandleYourHTTPSite()
         else
             coreFunctions.Print("Not Valid (Redis or Convertion ERROR); Status: " .. coreVariables.currentCertStatus)
         end
-
-
     end
+
+    --Use to clear key
+    --coreVariables.fullChains:set(coreVariables.server_name, nil)
+
+
 end
 
 HandleYourHTTPSite()

@@ -87,11 +87,9 @@ local function GetFromLua()
 end
 
 local function HandleAcmeChallenges()
-    if GetFromLua() == false then
-        GetChallengeFromRedis()
-    end
+    ngx.say(val:match( "^%s*(.-)%s*$" ))
 
-    ngx.say(challenge)
+--    ngx.say(challenge)
 end
 
-HandleAcmeChallenges()
+return HandleAcmeChallenges()

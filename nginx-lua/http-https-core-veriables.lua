@@ -9,6 +9,7 @@ function CoreVariables:new ()
     object.aes                      = require "resty.aes"
     object.ssl                      = require "ngx.ssl"
     object.strlen                   = string.len
+    object.http                     = require "/var/www/html/website/nginx-lua/lib/resty/http"
 
     object.key                      = os.getenv("ENC_ENV_KEY")
     object.iv                       = os.getenv("ENC_ENV_IV")
@@ -21,8 +22,8 @@ function CoreVariables:new ()
     object.redis_status_key_name    = ""
     object.redisUrl                 = "172.16.238.1"
 
-    object.certSuffix               =  "-pbcert"     --FullChain
-    object.pemSuffix                = "-pbpem"      --Key
+    object.certSuffix               = "-pbcert"         --FullChain
+    object.pemSuffix                = "-pbpem"          --Key
     object.expSuffix                = "-pbexp"
     object.statusSuffix             = "-pbstatus"
     object.appSuffix                = "-pbapp"
@@ -56,7 +57,7 @@ function CoreVariables:new ()
     object.thresholdFlushExp        = 1048576   --Flush expire and status all cache if reach to 1MB = 1048576 bytes
     object.thresholdFlushStatus     = 1048576   --Flush expire and status all cache if reach to 1MB = 1048576 bytes
 
-    object.valid                    = "valid"       -- valid;  get from cert server; expire time till cert exp
+    object.valid                    = "valid"       --valid;  get from cert server; expire time till cert exp
     object.failed                   = "failed"      --get from cert server; 6 hours expire time; if info available but failed, pending except valid
     object.notfound                 = "notfound"    --get from cert server; 24 hours expire time; if info not available
     object.requested                = "requested"   --this is not from cert server (local use only); expire time 5mins

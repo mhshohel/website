@@ -24,7 +24,6 @@ function CoreFunctions:new (coreVariables)
         if not coreVariables.currentCertStatus or coreVariables.currentCertStatus == ngx.null or coreVariables.currentCertStatus == "" then
             return false
         else
-            object.Print("Got From LUA")
             return true
         end
     end
@@ -123,7 +122,6 @@ function CoreFunctions:new (coreVariables)
     end
 
     object.SetStatusRequested = function()
-        object.Print("Set status as Requested")
         coreVariables.currentCertStatus = coreVariables.requested
         coreVariables.certsStatus:set(coreVariables.server_name, coreVariables.currentCertStatus, coreVariables.expiresQuickly) --Stop request for 60s before try again
     end
@@ -155,8 +153,6 @@ function CoreFunctions:new (coreVariables)
     end
 
     object.GetCertFromRedis = function()
-        object.Print("Get From REDIS")
-
         local red                   = coreVariables.redis:new()
         red:set_timeout(1000) -- 1 sec
 
@@ -221,6 +217,29 @@ function CoreFunctions:new (coreVariables)
     object.RequestCachedCertificate = function()
         -- only request for cached certificate; don't order
         object.Print("Request new certificate or status from cert server")
+
+        --https://github.com/ledgetech/lua-resty-http
+        local domain = "www.firstigs.co.uk" --coreVariables.server_name
+        local uri = "http://34.247.79.36/certificate/testaws.php?Domain=" .. domain
+        local httpc = coreVariables.http.new()
+        httpc:set_timeout(1000) --Max Wait Time 1s; 1000ms
+        local res, err = httpc:request_uri(uri, {
+            method = "GET",
+            headers = {
+                ["Content-Type"]    = "text/plain",
+                ["X-API-KEY"]       = "~NWFkEWYwODM1MmZhEjA5M2FhZjdk?DFjMGQwZmRmYzc="
+            },
+            keepalive_timeout = 10,
+            keepalive_pool = 10
+        })
+
+        if err then
+            ngx.say("failed to request: ", err)
+        else
+            ngx.say(res.body)
+        end
+
+
     end
 
     object.Init = function()

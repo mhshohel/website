@@ -23,7 +23,6 @@ local function ClearSSLCertificate()
     local ok, err           = coreVariables.ssl.clear_certs()
     if not ok then
         coreFunctions.SetStatusRequested()
-        coreFunctions.Print("Clear Certificate")
     end
 end
 
@@ -46,38 +45,27 @@ local function LoadPrivateKeyToSSL()
 end
 
 local function LoadCertificate()
-    coreFunctions.Print("Load SSL Certificate...")
-
     ClearSSLCertificate()
     LoadCertificateToSSL()
     LoadPrivateKeyToSSL()
 end
 
 local function HandleYourHTTPSSite()
-    local clock = os.clock
-    local start = clock()
+--    local clock = os.clock
+--    local start = clock()
 
     CheckSNIName()
 
-    coreFunctions.Print(coreVariables.server_name)
-
     local hasRedisConnectionErr = coreFunctions.Init() -- default false; means no connection error
 
-    local endtiem = (clock() - start)
-    coreFunctions.Print("----------------------")
-    coreFunctions.Print("Total Time In Seconds: " .. endtiem)
-    coreFunctions.Print("Total Time In Readable Seconds: " .. endtiem * 1000)
-    coreFunctions.Print("----------------------")
-
-    coreFunctions.Print("......................")
-    coreFunctions.Print(coreVariables.expireDuration / 86400 .. " days")
-    coreFunctions.Print(coreVariables.expireDuration .. " seconds")
-    coreFunctions.Print("......................")
+--    local endtiem = (clock() - start)
+--    coreFunctions.Print("----------------------")
+--    coreFunctions.Print("Total Time In Seconds: " .. endtiem)
+--    coreFunctions.Print("Total Time In Readable Seconds: " .. endtiem * 1000)
+--    coreFunctions.Print("----------------------")
 
     if hasRedisConnectionErr == false then
         if coreVariables.currentCertStatus == coreVariables.valid then
-            coreFunctions.Print("Valid; Status: " .. coreVariables.currentCertStatus)
-
             --LOAD SSL
             LoadCertificate()
         else

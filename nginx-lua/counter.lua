@@ -7,10 +7,10 @@ local function monitor()
     local Status_404 = { ['404'] = true };
 
     local keys = {
-        ["Total"] = ServerName .. "-> Total",
-        ["Proxy"] = ServerName .. "-> Proxy",
-        ["NotAllowed"] = ServerName .. "-> NotAllowled",
-        ["Status_200"] = ServerName .. "-> Status_200",
+        ["Total"] = ServerName .. "Total",
+        ["Proxy"] = ServerName .. "Proxy",
+        ["NotAllowed"] = ServerName .. "NotAllowled",
+        ["Status_200"] = ServerName .. "Status_200",
         ["Status_404"] = ServerName .. "-> Status_404"
     };
 
